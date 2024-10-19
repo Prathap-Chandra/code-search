@@ -1,9 +1,8 @@
 "use client";
 
-import Image from "next/image";
+import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
 
 type SearchResult = {
   [filename: string]: Array<{ [lineRange: string]: string }>;
@@ -22,7 +21,7 @@ export default function Home() {
     setError(null);
 
     try {
-      const response = await fetch("http://localhost:5000/search", {
+      const response = await fetch("/api/search", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -31,8 +30,6 @@ export default function Home() {
           github_url: githubUrl,
           query: question,
         }),
-        mode: "cors",
-        credentials: "same-origin",
       });
 
       if (!response.ok) {
