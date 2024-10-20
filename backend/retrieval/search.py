@@ -96,6 +96,8 @@ def search_for_relevant_functions(repo, query, files_to_use):
 
   for file in files_to_use:
     file_contents = get_file_contents(repo, file)
+    if not file_contents:
+      continue
 
     sys_prompt = build_file_contents_search_sys_prompt(query, file_contents)
     response = call_model(LLAMA_70B, sys_prompt)
@@ -104,15 +106,18 @@ def search_for_relevant_functions(repo, query, files_to_use):
 
     file_recommendations = FileRecommendations(file_name=file, functions=[])
     if RELEVANT_FUNCTIONS_KEY in parsed_response:
-      print("Relevant functions found in file:", parsed_response[RELEVANT_FUNCTIONS_KEY])
+      print(f"Relevant functions found in file: {file}:", parsed_response[RELEVANT_FUNCTIONS_KEY])
       for function_name in parsed_response[RELEVANT_FUNCTIONS_KEY]:
-        line_start, line_end, function_code = find_function_definition(file_contents.code, function_name)
+        func_def = find_function_definition(file_contents.code, function_name)
+        if not func_def:
+          continue
 
+        line_start, line_end, function_code = func_def
+        
         function_def = FunctionDefinition(name=function_name, 
           line_start=line_start, line_end=line_end, code=function_code)
         file_recommendations.functions.append(function_def)
-    
-    recommendations.files.append(file_recommendations)
+        recommendations.files.append(file_recommendations)
 
   return recommendations
 
@@ -126,6 +131,7 @@ def display_recommendations(recommendations):
 
 def run_search(repo, query):
   files_to_use = search_for_relevant_files(repo, query)
+  print("Files to use:", files_to_use)
   recommendations = search_for_relevant_functions(repo, query, files_to_use)
   return recommendations
 

@@ -1,6 +1,7 @@
 RELEVANT_FILES_KEY = "most_relevant_files"
 RELEVANT_DIRECTORIES_KEY = "most_relevant_directories"
 RELEVANT_FUNCTIONS_KEY = "most_relevant_functions"
+RELEVANT_CLASSES_KEY = "most_relevant_classes"
 
 FIND_MOST_RELEVANT_FILE = """
 You are an expert in a given code base and your task is to help point a new
@@ -65,5 +66,5 @@ Provide you answer in json format:
 To reiterate:
 1. Only return a json object and nothing else. Your response should begin with an open brace and end with a close brace.
 2. Please ensure that every function you return exists. Double check that it exists in the file code.
-3. Make sure to return a function name only. Do not return class names.
+3. Make sure to return a function name only. Do not return class or variable names. All python function start with the word "def".
 """

@@ -1,8 +1,8 @@
 from fireworks.client import Fireworks
+import os
 
-api_key = "fw_3ZWxzEAsPrjYMJ9egqWwaQvt"
-api_key2 = "fw_3ZRvGMzSEYCB8jKG4yLBhT8h"
-client = Fireworks(api_key=api_key2)
+api_key = os.getenv("FIREWORKS_API_KEY")
+client = Fireworks(api_key=api_key)
 
 LLAMA_70B="accounts/fireworks/models/llama-v3p1-70b-instruct"
 LLAMA_8B="accounts/fireworks/models/llama-v3p1-8b-instruct"

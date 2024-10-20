@@ -64,6 +64,8 @@ def get_repo_file_structure(repo_url, path=None):
 
 def get_file_contents(repo_url, path):
     contents = get_repo_contents(repo_url, path)
+    if not contents:
+      return None
     return FileContents(name=contents['name'], 
                         code=base64.b64decode(contents['content']).decode('utf-8'))
     
@@ -87,19 +89,6 @@ def get_function_with_comments(code_str, function_node):
     
     return (start_line, end_line, "\n".join(function_lines))
 
-def get_function_source(function_node):
-    """
-    Extract the source code of the function node by accessing its body.
-    """
-    if function_node is None:
-        return "Function not found."
-    
-    # Join each line in the function body (the body is a list of statement nodes)
-    lines = []
-    for stmt in function_node.body:
-        lines.append(stmt.as_string())  # Get the string representation of each statement
-    
-    return "\n".join(lines)
 
 def find_function_in_class_or_module(node, function_name):
     """
