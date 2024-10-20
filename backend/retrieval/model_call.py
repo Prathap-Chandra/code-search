@@ -21,3 +21,15 @@ def call_model(model, sys_msg):
   )
 
   return response.choices[0].message.content
+
+async def async_call_model(model, sys_msg):
+  response = client.chat.completions.create(
+    model=model,
+    messages=[{
+      "role": "user",
+      "content": sys_msg,
+    }],
+    temperature=0,
+  )
+
+  return response.choices[0].message.content

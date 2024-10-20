@@ -22,6 +22,8 @@ import json
 from dataclasses import dataclass
 from urllib.parse import urlparse
 
+from retrieval.multi_processor_utils import MultiprocessingProcessor
+
 
 # Dummy test case:
 REPO = "https://github.com/TheAlgorithms/Python"
@@ -56,35 +58,47 @@ def build_folder_structure_search_sys_prompt(query, folder_contents):
   ) + "\n" + ANSWER_FORMAT
 
 
+def prepare_prompt_and_call_model(repo, query, directory):
+  contents = get_repo_file_structure(repo, directory)
+  sys_prompt = build_folder_structure_search_sys_prompt(query, contents)
+  response = call_model(LLAMA_70B, sys_prompt)
+  parsed_response = json.loads(response)
+  return parsed_response
+
 def search_for_relevant_files(repo, query):
   files_to_use = []
 
   directories_to_search = [None]
+
+  processor = MultiprocessingProcessor(concurrency = 10)
+
   while directories_to_search:
     print("Searching directories:", directories_to_search)
-    directory = directories_to_search.pop(0)
-    contents = get_repo_file_structure(repo, directory)
 
-    # Call model and get response
-    sys_prompt = build_folder_structure_search_sys_prompt(query, contents)
-    response = call_model(LLAMA_70B, sys_prompt)
-    print(response)
+    if len(directories_to_search) == 1 or True:
+      print("Serial")
+      directory = directories_to_search.pop(0)
+      responses = [prepare_prompt_and_call_model(repo, query, directory)]
+    else:
+      print("Parallel")
+      args = [(repo, query, directory) for directory in directories_to_search]
+      directories_to_search = []
+      responses = [processor.process(prepare_prompt_and_call_model, args)]
 
-    parsed_response =json.loads(response)
+    for response in responses:
+      if RELEVANT_DIRECTORIES_KEY in response:
+        for sub_dir in response[RELEVANT_DIRECTORIES_KEY]:
+          if directory:
+            directories_to_search.append(directory + "/" + sub_dir)
+          else:
+            directories_to_search.append(sub_dir)
 
-    if RELEVANT_DIRECTORIES_KEY in parsed_response:
-      for sub_dir in parsed_response[RELEVANT_DIRECTORIES_KEY]:
-        if directory:
-          directories_to_search.append(directory + "/" + sub_dir)
-        else:
-          directories_to_search.append(sub_dir)
-
-    if RELEVANT_FILES_KEY in parsed_response:
-      for file in parsed_response[RELEVANT_FILES_KEY]:
-        if directory:
-          files_to_use.append(directory + "/" + file)
-        else:
-          files_to_use.append(file)
+      if RELEVANT_FILES_KEY in response:
+        for file in response[RELEVANT_FILES_KEY]:
+          if directory:
+            files_to_use.append(directory + "/" + file)
+          else:
+            files_to_use.append(file)
 
   return files_to_use
 
