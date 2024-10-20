@@ -31,6 +31,7 @@ def search():
 @app.route('/comment', methods=['POST'])
 def comment():
     data = request.get_json()
+    print("Received data:", data)
     query = data.get('query')
     current_context = data.get('current_context')
     current_file = data.get('current_file')

@@ -28,6 +28,13 @@ export function CommentPopup({
     setCommentResults(null);
 
     try {
+      console.log("Sending data:", {
+        query: comment,
+        current_context: searchResults,
+        current_file: currentFile,
+        current_line: currentLine,
+      });
+
       const response = await fetch("/api/comment", {
         method: "POST",
         headers: {
@@ -36,8 +43,8 @@ export function CommentPopup({
         body: JSON.stringify({
           query: comment,
           current_context: searchResults,
-          currentFile: currentFile,
-          currentLine: currentLine,
+          current_file: currentFile,
+          current_line: currentLine,
         }),
       });
 
@@ -46,6 +53,7 @@ export function CommentPopup({
       }
 
       const data = await response.json();
+      console.log("Received data:", data);
       setCommentResults(data);
       onSubmit(comment);
       setComment("");
@@ -56,6 +64,9 @@ export function CommentPopup({
       setIsLoading(false);
     }
   };
+
+  console.log("currentFile", currentFile);
+  console.log("currentLine", currentLine);
 
   return (
     <div className="absolute bg-white border border-gray-300 p-4 rounded shadow-lg">
