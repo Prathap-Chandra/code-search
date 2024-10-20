@@ -151,6 +151,11 @@ export default function Home() {
     <div className="flex flex-col items-center justify-center min-h-screen p-8 gap-8">
       <RetroGrid />
       <WordPullUp words="Code Search Tool" />
+      <div>
+        {
+          "Search Massive Repos using Natural Language (no preprocessing required)"
+        }
+      </div>
       <main className="flex flex-col gap-4 w-full max-w-md">
         <Input
           type="text"
