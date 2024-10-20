@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { CommentPopup } from "@/components/ui/CommentPopup";
@@ -8,6 +8,7 @@ import CodeMirror from "@uiw/react-codemirror";
 import { javascript } from "@codemirror/lang-javascript";
 import { python } from "@codemirror/lang-python";
 import { lineNumbers } from "@codemirror/view";
+import { EditorView } from "@codemirror/view";
 
 type SearchResult = {
   [filename: string]: Array<{ [lineRange: string]: string }>;
@@ -20,12 +21,16 @@ export default function Home() {
   const [searchResults, setSearchResults] = useState<SearchResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [comments, setComments] = useState<{
-    [key: string]: { [key: number]: string[] };
+    [key: string]: { [key: number]: { comment: string; response: string }[] };
   }>({});
   const [showCommentPopup, setShowCommentPopup] = useState(false);
   const [currentFile, setCurrentFile] = useState<string | null>(null);
   const [currentLine, setCurrentLine] = useState<number | null>(null);
 
+  useEffect(() => {
+    console.log("Comments updated:", comments);
+  }, [comments]);
+  console.log("comments", comments);
   const handleSearch = async () => {
     setIsLoading(true);
     setSearchResults(null);
@@ -66,25 +71,37 @@ export default function Home() {
     []
   );
 
-  const handleCommentSubmit = (comment: string) => {
-    if (currentFile && currentLine !== null) {
-      setComments((prevComments) => ({
-        ...prevComments,
-        [currentFile]: {
-          ...prevComments[currentFile],
-          [currentLine]: [
-            ...(prevComments[currentFile]?.[currentLine] || []),
+  const handleCommentSubmit = useCallback(
+    (comment: string, response: string) => {
+      if (currentFile && currentLine !== null) {
+        setComments((prevComments) => {
+          const fileComments = prevComments[currentFile] || {};
+          const lineComments = fileComments[currentLine] || [];
+          console.log(
+            "Updating comments:",
+            currentFile,
+            currentLine,
             comment,
-          ],
-        },
-      }));
-      setShowCommentPopup(false);
-    }
-  };
+            response
+          );
+          return {
+            ...prevComments,
+            [currentFile]: {
+              ...fileComments,
+              [currentLine]: [...lineComments, { comment, response }],
+            },
+          };
+        });
+      }
+    },
+    [currentFile, currentLine]
+  );
 
-  const handleCommentClose = () => {
+  const handleCommentClose = useCallback(() => {
     setShowCommentPopup(false);
-  };
+    setCurrentFile(null);
+    setCurrentLine(null);
+  }, []);
 
   const getLanguageExtension = (filename: string) => {
     if (filename.endsWith(".js") || filename.endsWith(".ts")) {
@@ -99,6 +116,18 @@ export default function Home() {
     const [start, end] = lineRange.split(":").map(Number);
     return [start || 1, end || start || 1]; // Default to [1, 1] if parsing fails
   };
+
+  const handleCodeMirrorClick = useCallback(
+    (view: EditorView, event: MouseEvent, startLine: number) => {
+      const pos = view.posAtCoords({ x: event.clientX, y: event.clientY });
+      if (pos) {
+        const line = view.state.doc.lineAt(pos);
+        const filename = currentFile || ""; // Ensure filename is always a string
+        handleLineClick(filename, startLine + line.number - 1);
+      }
+    },
+    [handleLineClick, currentFile]
+  );
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-8 gap-8">
@@ -150,9 +179,7 @@ export default function Home() {
                         <p className="text-sm text-gray-600 mb-1">
                           Lines {lineRange}:
                         </p>
-                        <div
-                          onClick={() => handleLineClick(filename, startLine)}
-                        >
+                        <div>
                           <CodeMirror
                             value={code}
                             height="auto"
@@ -160,6 +187,15 @@ export default function Home() {
                               getLanguageExtension(filename),
                               lineNumbers({
                                 formatNumber: (n) => String(n + startLine - 1),
+                              }),
+                              EditorView.domEventHandlers({
+                                click: (event, view) => {
+                                  handleCodeMirrorClick(
+                                    view,
+                                    event as MouseEvent,
+                                    startLine
+                                  );
+                                },
                               }),
                             ]}
                             theme="dark"
@@ -173,34 +209,39 @@ export default function Home() {
                             }}
                           />
                         </div>
-                        {comments[filename] &&
-                          Object.entries(comments[filename]).map(
-                            ([lineNumber, lineComments]) => {
-                              if (
-                                Number(lineNumber) >= startLine &&
-                                Number(lineNumber) <= endLine
-                              ) {
-                                return (
-                                  <div key={lineNumber} className="mt-2">
-                                    <p className="text-sm font-semibold">
-                                      Line {lineNumber}:
-                                    </p>
-                                    {lineComments.map((comment, index) => (
-                                      <p key={index} className="text-sm ml-4">
-                                        {comment}
-                                      </p>
-                                    ))}
-                                  </div>
-                                );
-                              }
-                              return null;
-                            }
-                          )}
                       </div>
                     );
                   })}
                 </div>
               ))}
+              {/* Render comments for this file */}
+              {comments[filename] && (
+                <div className="mt-4">
+                  <h4 className="text-lg font-semibold">Comments:</h4>
+                  {Object.entries(comments[filename]).map(
+                    ([lineNumber, lineComments]) => (
+                      <div
+                        key={lineNumber}
+                        className="mt-2 bg-gray-200 p-2 rounded"
+                      >
+                        <p className="text-sm font-semibold">
+                          Line {lineNumber}:
+                        </p>
+                        {lineComments.map(({ comment, response }, index) => (
+                          <div key={index} className="text-sm ml-4 mt-1">
+                            <p>
+                              <strong>Q:</strong> {comment}
+                            </p>
+                            <p>
+                              <strong>A:</strong> {response}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    )
+                  )}
+                </div>
+              )}
             </div>
           ))}
         </div>
