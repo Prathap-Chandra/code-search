@@ -79,21 +79,42 @@ export function CommentPopup({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[60vw] sm:max-h-[80vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>
             <WordPullUp words="Ask a Question" />
           </DialogTitle>
         </DialogHeader>
-        {!commentResponse ? (
-          <>
+        <div className="flex-grow overflow-y-scroll">
+          {!commentResponse ? (
             <Textarea
               value={comment}
               onChange={(e) => setComment(e.target.value)}
               placeholder="Add your question..."
-              className="min-h-[100px]"
+              className="min-h-[100px] w-full"
             />
-            <DialogFooter>
+          ) : (
+            <div className="mt-2 space-y-4">
+              <div>
+                <h4 className="font-semibold">Your Question:</h4>
+                <p className="border border-gray-300 p-4 rounded-md bg-gray-50">
+                  {comment}
+                </p>
+              </div>
+              <div>
+                <h4 className="font-semibold">Answer:</h4>
+                <div className="border border-gray-300 rounded-md bg-white">
+                  <div className="max-h-[40vh] overflow-y-scroll  p-4">
+                    {commentResponse}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+        <DialogFooter className="mt-4 sticky bottom-0 bg-white p-4 border-t">
+          {!commentResponse ? (
+            <>
               <Button onClick={handleClose} variant="outline">
                 Cancel
               </Button>
@@ -104,23 +125,11 @@ export function CommentPopup({
               >
                 {isLoading ? "Submitting..." : "Submit"}
               </ShimmerButton>
-            </DialogFooter>
-          </>
-        ) : (
-          <>
-            <div className="mt-2">
-              <h4 className="font-semibold">Your Question:</h4>
-              <p className="border border-black p-4 rounded-md">{comment}</p>
-              <h4 className="font-semibold mt-4">Answer:</h4>
-              <p className="border border-black p-4 rounded-md">
-                {commentResponse}
-              </p>
-            </div>
-            <DialogFooter>
-              <ShimmerButton onClick={handleClose}>Close</ShimmerButton>
-            </DialogFooter>
-          </>
-        )}
+            </>
+          ) : (
+            <ShimmerButton onClick={handleClose}>Close</ShimmerButton>
+          )}
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
