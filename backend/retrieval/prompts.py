@@ -107,5 +107,5 @@ No need for any greeting or introduction. Just give an answer.
 To reiterate:
 1. Give your answer directly. No greeting, introduction, or prefix.
 2. Please provide the best answer you can given the context.
-3. Be concise. Short and simple is better.
+3. Be concise. Short and simple is better. No more than 3-4 sentences.
 """
