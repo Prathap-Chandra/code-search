@@ -9,6 +9,12 @@ import { javascript } from "@codemirror/lang-javascript";
 import { python } from "@codemirror/lang-python";
 import { lineNumbers } from "@codemirror/view";
 import { EditorView } from "@codemirror/view";
+import Globe from "@/components/ui/globe";
+import { NeonGradientCard } from "@/components/ui/neon-gradient-card";
+import WordPullUp from "@/components/ui/word-pull-up";
+import ShimmerButton from "@/components/ui/shimmer-button";
+import RetroGrid from "@/components/ui/retro-grid";
+import BlurIn from "@/components/ui/blur-in";
 
 type SearchResult = {
   [filename: string]: Array<{ [lineRange: string]: string }>;
@@ -143,7 +149,8 @@ export default function Home() {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-8 gap-8">
-      <h1 className="text-3xl font-bold">Code Search Tool</h1>
+      <RetroGrid />
+      <WordPullUp words="Code Search Tool" />
       <main className="flex flex-col gap-4 w-full max-w-md">
         <Input
           type="text"
@@ -159,14 +166,20 @@ export default function Home() {
           value={question}
           onChange={(e) => setQuestion(e.target.value)}
         />
-        <Button onClick={handleSearch} disabled={isLoading}>
+        <ShimmerButton onClick={handleSearch} disabled={isLoading}>
           {isLoading ? "Searching..." : "Search"}
-        </Button>
+        </ShimmerButton>
       </main>
 
       {isLoading && (
         <div className="mt-4 text-center">
-          <p>Loading results...</p>
+          <div className="relative flex size-full max-w-lg items-center justify-center overflow-hidden rounded-lg border bg-background px-40 pb-40 pt-8 md:pb-60 md:shadow-xl">
+            <span className="pointer-events-none whitespace-pre-wrap bg-gradient-to-b from-black to-gray-300/80 bg-clip-text text-center text-5xl font-semibold leading-none text-transparent dark:from-white dark:to-slate-900/10">
+              Searching...
+            </span>
+            <Globe className="top-28" />
+            <div className="pointer-events-none absolute inset-0 h-full bg-[radial-gradient(circle_at_50%_200%,rgba(0,0,0,0.2),rgba(255,255,255,0))]" />
+          </div>
         </div>
       )}
 
@@ -178,7 +191,8 @@ export default function Home() {
 
       {searchResults && (
         <div className="mt-8 w-full">
-          <h2 className="text-2xl font-bold mb-4">Search Results</h2>
+          {/* <h2 className="text-2xl font-bold mb-4">Search Results</h2> */}
+          <BlurIn word="Search Results"></BlurIn>
           {Object.entries(searchResults).map(([filename, snippets]) => (
             <div key={filename} className="mb-6">
               <h3 className="text-xl font-semibold mb-2">{filename}</h3>
@@ -230,7 +244,9 @@ export default function Home() {
               {/* Render comments for this file */}
               {comments[filename] && (
                 <div className="mt-4">
-                  <h4 className="text-lg font-semibold">Comments:</h4>
+                  <h4 className="text-lg font-semibold">
+                    Questions & Answers:
+                  </h4>
                   {Object.entries(comments[filename]).map(
                     ([lineNumber, lineComments]) => (
                       <div

@@ -8,6 +8,8 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import WordPullUp from "@/components/ui/word-pull-up";
+import ShimmerButton from "@/components/ui/shimmer-button";
 
 type SearchResult = {
   [filename: string]: Array<{ [lineRange: string]: string }>;
@@ -79,38 +81,43 @@ export function CommentPopup({
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Add Comment</DialogTitle>
+          <DialogTitle>
+            <WordPullUp words="Ask a Question" />
+          </DialogTitle>
         </DialogHeader>
         {!commentResponse ? (
           <>
             <Textarea
               value={comment}
               onChange={(e) => setComment(e.target.value)}
-              placeholder="Add your comment..."
+              placeholder="Add your question..."
               className="min-h-[100px]"
             />
             <DialogFooter>
               <Button onClick={handleClose} variant="outline">
                 Cancel
               </Button>
-              <Button
+              <ShimmerButton
                 onClick={handleSubmit}
                 disabled={!comment.trim() || isLoading}
+                className="h-4/5"
               >
                 {isLoading ? "Submitting..." : "Submit"}
-              </Button>
+              </ShimmerButton>
             </DialogFooter>
           </>
         ) : (
           <>
             <div className="mt-2">
-              <h4 className="font-semibold">Your Comment:</h4>
-              <p>{comment}</p>
-              <h4 className="font-semibold mt-4">Response:</h4>
-              <p>{commentResponse}</p>
+              <h4 className="font-semibold">Your Question:</h4>
+              <p className="border border-black p-4 rounded-md">{comment}</p>
+              <h4 className="font-semibold mt-4">Answer:</h4>
+              <p className="border border-black p-4 rounded-md">
+                {commentResponse}
+              </p>
             </div>
             <DialogFooter>
-              <Button onClick={handleClose}>Close</Button>
+              <ShimmerButton onClick={handleClose}>Close</ShimmerButton>
             </DialogFooter>
           </>
         )}
