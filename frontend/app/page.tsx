@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { CommentPopup } from "@/components/ui/CommentPopup";
+import { EditorView } from "@codemirror/view";
 import CodeMirror from "@uiw/react-codemirror";
 import { javascript } from "@codemirror/lang-javascript";
 import { python } from "@codemirror/lang-python";
@@ -18,6 +20,15 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [searchResults, setSearchResults] = useState<SearchResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [comments, setComments] = useState<{
+    [key: string]: { [key: number]: string[] };
+  }>({});
+  const [showCommentPopup, setShowCommentPopup] = useState(false);
+  const [commentPosition, setCommentPosition] = useState({ top: 0, left: 0 });
+  const [currentFile, setCurrentFile] = useState<string | null>(null);
+  const [currentLine, setCurrentLine] = useState<number | null>(null);
+
+  const codeMirrorRef = useRef<HTMLDivElement>(null);
 
   const handleSearch = async () => {
     setIsLoading(true);
@@ -48,6 +59,50 @@ export default function Home() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleLineClick = useCallback(
+    (
+      event: React.MouseEvent<HTMLDivElement>,
+      filename: string,
+      startLine: number
+    ) => {
+      if (codeMirrorRef.current) {
+        const rect = codeMirrorRef.current.getBoundingClientRect();
+        const lineHeight = 20; // Adjust this value based on your CodeMirror line height
+        const clickedLine =
+          Math.floor((event.clientY - rect.top) / lineHeight) + startLine;
+
+        setCommentPosition({
+          top: event.clientY - rect.top,
+          left: event.clientX - rect.left,
+        });
+        setShowCommentPopup(true);
+        setCurrentFile(filename);
+        setCurrentLine(clickedLine);
+      }
+    },
+    []
+  );
+
+  const handleCommentSubmit = (comment: string) => {
+    if (currentFile && currentLine !== null) {
+      setComments((prevComments) => ({
+        ...prevComments,
+        [currentFile]: {
+          ...prevComments[currentFile],
+          [currentLine]: [
+            ...(prevComments[currentFile]?.[currentLine] || []),
+            comment,
+          ],
+        },
+      }));
+      setShowCommentPopup(false);
+    }
+  };
+
+  const handleCommentClose = () => {
+    setShowCommentPopup(false);
   };
 
   const getLanguageExtension = (filename: string) => {
@@ -100,7 +155,7 @@ export default function Home() {
       )}
 
       {searchResults && (
-        <div className="mt-8 w-full max-w-2xl">
+        <div className="mt-8 w-full">
           <h2 className="text-2xl font-bold mb-4">Search Results</h2>
           {Object.entries(searchResults).map(([filename, snippets]) => (
             <div key={filename} className="mb-6">
@@ -114,25 +169,55 @@ export default function Home() {
                         <p className="text-sm text-gray-600 mb-1">
                           Lines {lineRange}:
                         </p>
-                        <CodeMirror
-                          value={code}
-                          height="auto"
-                          extensions={[
-                            getLanguageExtension(filename),
-                            lineNumbers({
-                              formatNumber: (n) => String(n + startLine - 1),
-                            }),
-                          ]}
-                          theme="dark"
-                          editable={false}
-                          basicSetup={{
-                            lineNumbers: false,
-                            foldGutter: false,
-                            dropCursor: false,
-                            allowMultipleSelections: false,
-                            indentOnInput: false,
-                          }}
-                        />
+                        <div
+                          ref={codeMirrorRef}
+                          onClick={(event) =>
+                            handleLineClick(event, filename, startLine)
+                          }
+                        >
+                          <CodeMirror
+                            value={code}
+                            height="auto"
+                            extensions={[
+                              getLanguageExtension(filename),
+                              lineNumbers({
+                                formatNumber: (n) => String(n + startLine - 1),
+                              }),
+                            ]}
+                            theme="dark"
+                            editable={false}
+                            basicSetup={{
+                              lineNumbers: false,
+                              foldGutter: false,
+                              dropCursor: false,
+                              allowMultipleSelections: false,
+                              indentOnInput: false,
+                            }}
+                          />
+                        </div>
+                        {comments[filename] &&
+                          Object.entries(comments[filename]).map(
+                            ([lineNumber, lineComments]) => {
+                              if (
+                                Number(lineNumber) >= startLine &&
+                                Number(lineNumber) <= endLine
+                              ) {
+                                return (
+                                  <div key={lineNumber} className="mt-2">
+                                    <p className="text-sm font-semibold">
+                                      Line {lineNumber}:
+                                    </p>
+                                    {lineComments.map((comment, index) => (
+                                      <p key={index} className="text-sm ml-4">
+                                        {comment}
+                                      </p>
+                                    ))}
+                                  </div>
+                                );
+                              }
+                              return null;
+                            }
+                          )}
                       </div>
                     );
                   })}
@@ -140,6 +225,20 @@ export default function Home() {
               ))}
             </div>
           ))}
+        </div>
+      )}
+      {showCommentPopup && (
+        <div
+          style={{
+            position: "absolute",
+            top: commentPosition.top,
+            left: commentPosition.left,
+          }}
+        >
+          <CommentPopup
+            onSubmit={handleCommentSubmit}
+            onClose={handleCommentClose}
+          />
         </div>
       )}
     </div>
