@@ -68,6 +68,8 @@ def get_file_contents(repo_url, path):
     contents = get_repo_contents(repo_url, path)
     if not contents:
       return None
+    if isinstance(contents, list):
+      return None
     return FileContents(name=contents['name'], 
                         code=base64.b64decode(contents['content']).decode('utf-8'))
     
