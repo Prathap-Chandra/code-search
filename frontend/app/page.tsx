@@ -64,9 +64,9 @@ export default function Home() {
 
   const handleLineClick = useCallback(
     (filename: string, lineNumber: number) => {
-      setShowCommentPopup(true);
       setCurrentFile(filename);
       setCurrentLine(lineNumber);
+      setShowCommentPopup(true);
     },
     []
   );
@@ -118,16 +118,28 @@ export default function Home() {
   };
 
   const handleCodeMirrorClick = useCallback(
-    (view: EditorView, event: MouseEvent, startLine: number) => {
+    (
+      view: EditorView,
+      event: MouseEvent,
+      startLine: number,
+      filename: string
+    ) => {
       const pos = view.posAtCoords({ x: event.clientX, y: event.clientY });
       if (pos) {
         const line = view.state.doc.lineAt(pos);
-        const filename = currentFile || ""; // Ensure filename is always a string
         handleLineClick(filename, startLine + line.number - 1);
       }
     },
-    [handleLineClick, currentFile]
+    [handleLineClick]
   );
+
+  useEffect(() => {
+    console.log("Current file updated:", currentFile);
+  }, [currentFile]);
+
+  useEffect(() => {
+    console.log("Current line updated:", currentLine);
+  }, [currentLine]);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-8 gap-8">
@@ -193,7 +205,8 @@ export default function Home() {
                                   handleCodeMirrorClick(
                                     view,
                                     event as MouseEvent,
-                                    startLine
+                                    startLine,
+                                    filename
                                   );
                                 },
                               }),
