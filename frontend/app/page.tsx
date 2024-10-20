@@ -3,6 +3,10 @@
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import CodeMirror from "@uiw/react-codemirror";
+import { javascript } from "@codemirror/lang-javascript";
+import { python } from "@codemirror/lang-python";
+import { lineNumbers } from "@codemirror/view";
 
 type SearchResult = {
   [filename: string]: Array<{ [lineRange: string]: string }>;
@@ -44,6 +48,20 @@ export default function Home() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const getLanguageExtension = (filename: string) => {
+    if (filename.endsWith(".js") || filename.endsWith(".ts")) {
+      return javascript();
+    } else if (filename.endsWith(".py")) {
+      return python();
+    }
+    return javascript(); // default to JavaScript
+  };
+
+  const parseLineRange = (lineRange: string): [number, number] => {
+    const [start, end] = lineRange.split(":").map(Number);
+    return [start || 1, end || start || 1]; // Default to [1, 1] if parsing fails
   };
 
   return (
@@ -89,14 +107,35 @@ export default function Home() {
               <h3 className="text-xl font-semibold mb-2">{filename}</h3>
               {snippets.map((snippet, index) => (
                 <div key={index} className="bg-gray-100 p-4 rounded-md mb-2">
-                  {Object.entries(snippet).map(([lineRange, code]) => (
-                    <div key={lineRange}>
-                      <p className="text-sm text-gray-600 mb-1">
-                        Lines {lineRange}:
-                      </p>
-                      <pre className="bg-white p-2 rounded">{code}</pre>
-                    </div>
-                  ))}
+                  {Object.entries(snippet).map(([lineRange, code]) => {
+                    const [startLine, endLine] = parseLineRange(lineRange);
+                    return (
+                      <div key={lineRange}>
+                        <p className="text-sm text-gray-600 mb-1">
+                          Lines {lineRange}:
+                        </p>
+                        <CodeMirror
+                          value={code}
+                          height="auto"
+                          extensions={[
+                            getLanguageExtension(filename),
+                            lineNumbers({
+                              formatNumber: (n) => String(n + startLine - 1),
+                            }),
+                          ]}
+                          theme="dark"
+                          editable={false}
+                          basicSetup={{
+                            lineNumbers: false,
+                            foldGutter: false,
+                            dropCursor: false,
+                            allowMultipleSelections: false,
+                            indentOnInput: false,
+                          }}
+                        />
+                      </div>
+                    );
+                  })}
                 </div>
               ))}
             </div>
