@@ -60,11 +60,11 @@ ANSWER_FORMAT_FILES = f"""
 Provide you answer in json format:
 
 {{
-  "{RELEVANT_FUNCTIONS_KEY}": [<list of names of the most relevant file>. Leave empty if no relevant file is found]
+  "{RELEVANT_FUNCTIONS_KEY}": [<list of most relevant function names. Leave empty if no relevant functions are found>]
+  "{RELEVANT_CLASSES_KEY}": [<list of most relevant class names. Leave empty if no relevant classes are found>]
 }}
 
 To reiterate:
 1. Only return a json object and nothing else. Your response should begin with an open brace and end with a close brace.
-2. Please ensure that every function you return exists. Double check that it exists in the file code.
-3. Make sure to return a function name only. Do not return class or variable names. All python function start with the word "def".
+2. Please ensure that every function or class you return exists. Double check that it exists in the file code.
 """

@@ -7,68 +7,39 @@ import sys
 
 from dataclasses import dataclass
 
-@dataclass
-class FolderContents: 
-    directories: list
-    files: list
+class_code = """
+from __future__ import annotations
 
-@dataclass
-class FileContents:
-    name: str
-    code: str
+from typing import Generic, TypeVar
 
-def get_repo_contents(repo_url, folder_path=None):
-    # Extract owner and repo name from the URL
-    parts = repo_url.rstrip('/').split('/')
-    owner, repo = parts[-2], parts[-1]
-
-    # GitHub API endpoint
-    api_url = f"https://api.github.com/repos/{owner}/{repo}/contents"
-    
-    # If a folder is specified, add it to the API URL
-    if folder_path:
-        api_url += f"/{urllib.parse.quote(folder_path)}"
-
-    # Make a GET request to the GitHub API
-    response = requests.get(api_url)
-
-    # Check if the request was successful
-    if response.status_code == 200:
-        # Parse the JSON response
-        return json.loads(response.text)
-    else:
-        print(f"Error: Unable to fetch repository contents. Status code: {response.status_code}")
-        print(f"Folder path: {folder_path}")
-        print(response.text)
-    
-    return None
+T = TypeVar("T")
 
 
-def get_repo_file_structure(repo_url, path=None):
-    contents = get_repo_contents(repo_url, path)
-            
-    folder_contents = FolderContents(directories=[], files=[])
-    if isinstance(contents, list):
-        for item in contents:
-            if item['type'] == 'dir':
-                folder_contents.directories.append(item['name'])
-            else:
-                folder_contents.files.append(item['name'])
-    else:
-        if contents['type'] == 'dir':
-            folder_contents.directories.append(contents['name'])
-        else:
-            folder_contents.files.append(contents['name'])
+class StackOverflowError(BaseException):
+    pass
 
-    return folder_contents
 
-def get_file_contents(repo_url, path):
-    contents = get_repo_contents(repo_url, path)
-    if not contents:
-      return None
-    return FileContents(name=contents['name'], 
-                        code=base64.b64decode(contents['content']).decode('utf-8'))
-    
+class StackUnderflowError(BaseException):
+    pass
+
+
+class Stack(Generic[T]):
+    def __init__(self, limit: int = 10):
+        self.stack: list[T] = []
+        self.limit = limit
+
+    def __bool__(self) -> bool:
+        return bool(self.stack)
+
+    def __str__(self) -> str:
+        return str(self.stack)
+
+    def peek(self) -> T:
+        if not self.stack:
+            raise StackUnderflowError
+        return self.stack[-1]
+"""
+
 
 def get_function_with_comments(code_str, function_node):
     """
@@ -90,12 +61,13 @@ def get_function_with_comments(code_str, function_node):
     return (start_line, end_line, "\n".join(function_lines))
 
 
+
 def find_function_in_class_or_module(node, function_name, target_type="function"):
     """
     Recursively search through classes and modules to find a function by its name.
     """
     target_type_obj = astroid.FunctionDef if target_type == "function" else astroid.ClassDef
-
+    print(target_type_obj)
     # If it's a target type definition at the module or class level
     if isinstance(node, target_type_obj) and node.name == function_name:
         return node
@@ -124,5 +96,11 @@ def find_code_snippet_definition(code_str, function_name, target_type="function"
     node = find_function_in_class_or_module(tree, function_name, target_type)
     if node:
         return get_function_with_comments(code_str, node)
-    
+    else:
+        print("Function not found in module level.")
+        
     return None
+
+if __name__ == "__main__":
+    x = find_code_snippet_definition(class_code, "Stack", "class")
+    print(x)
