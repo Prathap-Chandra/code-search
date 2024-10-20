@@ -75,15 +75,20 @@ PROVIDE_EXPLANATION = """
 You are an expert in a given code base and your task is to help a new team
 member to understand the codebase better.
 
-You will be given the file contents of a couple files as context and the 
-team member's query. Your task is to provide the best answer you can given the
-context.
+You will be given the overall code snippet that the team member is referring to,
+the exact line that the team member is referring to, and the user query.
 
-<<<< FILE CONTENTS >>>>
+<<<< CODE SNIPPET >>>>
 
-{file_contents}
+{code_snippet}
 
-<<<< END FILE CONTENTS >>>>
+<<<< END CODE SNIPPET >>>>
+
+<<<< LINE USER IS POINTING TO >>>>
+
+{line}
+
+<<<< END LINE USER IS POINTING TO >>>>
 
 <<<< USER QUERY >>>>
 
@@ -93,13 +98,11 @@ context.
 """
 
 ANSWER_EXPLANATION = f"""
-Provide you answer in json format:
-
-{{
-  "{EXPLANATION_KEY}": <Your answer to the team member's query. Be kind, specific, and concise.>
-}}
+Provide your answer as if you are directly talking to the new team member.
+No need for any greeting or introduction. Just give an answer.
 
 To reiterate:
-1. Only return a json object and nothing else. Your response should begin with an open brace and end with a close brace.
+1. Give your answer directly. No greeting, introduction, or prefix.
 2. Please provide the best answer you can given the context.
+3. Be concise. Short and simple is better.
 """

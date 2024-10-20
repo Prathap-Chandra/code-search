@@ -178,20 +178,50 @@ if __name__ == "__main__":
   recommendations = search_for_relevant_functions(REPO, QUERY, files_to_use)
   display_recommendations(recommendations)
 
+def find_code_snippet_in_recommendations(recommendations, current_file, current_line):
+  for file_recommendations in recommendations.files:
+    if file_recommendations.file_name == current_file:
+      for function_def in file_recommendations.snippets:
+        if function_def.line_start <= current_line <= function_def.line_end:
+          return function_def
 
-def build_explanation_sys_prompt(query, context):
+def build_explanation_sys_prompt(query, recommendations, current_file, current_line):
+  function_def = find_code_snippet_in_recommendations(recommendations, current_file, current_line)
   
+  code = function_def.code
+  line_num = current_line - function_def.line_start
+  line_str = code.split('\n')[line_num]
+  print("len(line_str):", len(line_str))
+  print("line:", line_str)
   return PROVIDE_EXPLANATION.format(
-    file_contents=context,
+    code_snippet=code,
+    line=line_str,
     query=query
   )
 
-def find_explanation(query, context):
-  sys_prompt = build_explanation_sys_prompt(query, context)
-  response = call_model(LLAMA_70B, sys_prompt)
-  parsed_response = json.loads(response)
+def current_context_json_to_recommendations(current_context):
+  recommendations = Recommendations(files=[])
+  for file in current_context:
+    file_recommendations = FileRecommendations(file_name=file, snippets=[])
+    for file_recs_dict in current_context[file]:
+      for line_nums in file_recs_dict:
+        line_start, line_end = line_nums.split(':')
+        line_start = int(line_start)
+        line_end = int(line_end)
+        code = file_recs_dict[line_nums]
+        
+        code_snippet = CodeSnippetDefinition(name=None, line_start=line_start, line_end=line_end, code=code)
 
-  if EXPLANATION_KEY in parsed_response:
-    return parsed_response[EXPLANATION_KEY]
+        file_recommendations.snippets.append(code_snippet)
+    recommendations.files.append(file_recommendations)
+  return recommendations
+
+def find_explanation(query, current_context, current_file, current_line):
+  recommendations = current_context_json_to_recommendations(current_context) 
+
+  sys_prompt = build_explanation_sys_prompt(query, recommendations, current_file, current_line)
+  response = call_model(LLAMA_70B, sys_prompt)
+  if len(response) > 0:
+    return response
 
   return "I'm not sure. Please try again."

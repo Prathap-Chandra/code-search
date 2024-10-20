@@ -1,7 +1,7 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 
-from retrieval.search import run_search
+from retrieval.search import run_search, find_explanation
 
 app = Flask(__name__)
 # Configure CORS to allow requests from http://localhost:3000
@@ -16,7 +16,6 @@ def search():
     print(f"Received Query: {query}")
 
     result = run_search(github_url, query)
-    print(f"Result: {result}")
 
     response = {}
     for file_recommendations in result.files:
@@ -41,8 +40,11 @@ def comment():
     print(f"Received Current File: {current_file}")
     print(f"Received Current Line: {current_line}")
 
+    find_explanation_response = find_explanation(query, current_context, current_file, current_line)
+    print(find_explanation_response)
+
     mock_response = {
-        'response': "This does this."
+        'response': find_explanation_response
     }
 
     return jsonify(mock_response)
