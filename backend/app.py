@@ -1,6 +1,8 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 
+from retrieval.search import run_search
+
 app = Flask(__name__)
 # Configure CORS to allow requests from http://localhost:3000
 CORS(app, resources={r"/search": {"origins": "http://localhost:3000"}})
@@ -13,17 +15,18 @@ def search():
     print(f"Received GitHub URL: {github_url}")
     print(f"Received Query: {query}")
 
-    # Mock response data
-    mock_response = {
-        "file1.py": [
-            {"10-15": "def search_function(query):\n    # Implementation of search\n    return results"}
-        ],
-        "file2.js": [
-            {"20-25": "function processData(data) {\n  // Data processing logic\n  return processedData;\n}"}
-        ]
-    }
+    result = run_search(github_url, query)
+    print(f"Result: {result}")
 
-    return jsonify(mock_response)
+    response = {}
+    for file_recommendations in result.files:
+        response[file_recommendations.file_name] = []
+        for function_def in file_recommendations.functions:
+            response[file_recommendations.file_name].append({
+                f"{function_def.line_start}:{function_def.line_end}": function_def.code
+            })
+
+    return jsonify(response)
 
 if __name__ == '__main__':
     app.run(debug=True, host='127.0.0.1', port=3001)
