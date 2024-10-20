@@ -2,6 +2,7 @@ RELEVANT_FILES_KEY = "most_relevant_files"
 RELEVANT_DIRECTORIES_KEY = "most_relevant_directories"
 RELEVANT_FUNCTIONS_KEY = "most_relevant_functions"
 RELEVANT_CLASSES_KEY = "most_relevant_classes"
+EXPLANATION_KEY = "explanation"
 
 FIND_MOST_RELEVANT_FILE = """
 You are an expert in a given code base and your task is to help point a new
@@ -38,10 +39,10 @@ To reiterate:
 
 FIND_MOST_RELEVANT_FUNCTIONS = """
 You are an expert in a given code base and your task is to help point a new
-team member to the most relevant function in the code base given their query.
+team member to the most relevant functions/classes in the code base given their query.
 
 You will be given the file contents of a single file in the codebase and the 
-user query. Your task is to find the most relevant function.
+user query. Your task is to find the most relevant functions/classes.
 
 <<<< FILE CONTENTS >>>>
 
@@ -67,4 +68,38 @@ Provide you answer in json format:
 To reiterate:
 1. Only return a json object and nothing else. Your response should begin with an open brace and end with a close brace.
 2. Please ensure that every function or class you return exists. Double check that it exists in the file code.
+"""
+
+
+PROVIDE_EXPLANATION = """
+You are an expert in a given code base and your task is to help a new team
+member to understand the codebase better.
+
+You will be given the file contents of a couple files as context and the 
+team member's query. Your task is to provide the best answer you can given the
+context.
+
+<<<< FILE CONTENTS >>>>
+
+{file_contents}
+
+<<<< END FILE CONTENTS >>>>
+
+<<<< USER QUERY >>>>
+
+{query}
+
+<<<< END USER QUERY >>>>
+"""
+
+ANSWER_EXPLANATION = f"""
+Provide you answer in json format:
+
+{{
+  "{EXPLANATION_KEY}": <Your answer to the team member's query. Be kind, specific, and concise.>
+}}
+
+To reiterate:
+1. Only return a json object and nothing else. Your response should begin with an open brace and end with a close brace.
+2. Please provide the best answer you can given the context.
 """

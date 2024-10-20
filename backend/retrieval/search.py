@@ -12,7 +12,9 @@ from retrieval.prompts import (
   FIND_MOST_RELEVANT_FUNCTIONS,
   ANSWER_FORMAT_FILES,
   RELEVANT_FUNCTIONS_KEY,
-  RELEVANT_CLASSES_KEY
+  RELEVANT_CLASSES_KEY,
+  PROVIDE_EXPLANATION,
+  ANSWER_EXPLANATION,
 )
 from retrieval.model_call import call_model, LLAMA_70B
 
@@ -176,3 +178,20 @@ if __name__ == "__main__":
   recommendations = search_for_relevant_functions(REPO, QUERY, files_to_use)
   display_recommendations(recommendations)
 
+
+def build_explanation_sys_prompt(query, context):
+  
+  return PROVIDE_EXPLANATION.format(
+    file_contents=context,
+    query=query
+  )
+
+def find_explanation(query, context):
+  sys_prompt = build_explanation_sys_prompt(query, context)
+  response = call_model(LLAMA_70B, sys_prompt)
+  parsed_response = json.loads(response)
+
+  if EXPLANATION_KEY in parsed_response:
+    return parsed_response[EXPLANATION_KEY]
+
+  return "I'm not sure. Please try again."
