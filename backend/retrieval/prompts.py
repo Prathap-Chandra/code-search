@@ -34,8 +34,7 @@ Provide you answer in json format:
 To reiterate:
 1. Only return a json object and nothing else. Your response should begin with an open brace and end with a close brace.
 2. Please ensure that every file or directory you return exists. Double check that it was one of the options.
-3. In general, if you feel like a directory could be relevant, you should return it. You want to optimize for recall. For files, you
-   should be a bit more selective.
+3. In general, if you feel like a directory could be relevant, you should return it. Consider both precision and recall.
 """
 
 
@@ -70,7 +69,8 @@ Provide you answer in json format:
 To reiterate:
 1. Only return a json object and nothing else. Your response should begin with an open brace and end with a close brace.
 2. Please ensure that every function or class you return exists. Double check that it exists in the file code.
-3. Only return functions or classes that are highly relevant to the user's query. You want to optimize for precision. 
+3. Only return functions or classes that are highly relevant to the user's query. You want to optimize for precision. Return nothing if
+   if the function/class will not address the user's query.
 """
 
 
