@@ -1,5 +1,8 @@
 from fireworks.client import Fireworks
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 api_key = os.getenv("FIREWORKS_API_KEY")
 client = Fireworks(api_key=api_key)
