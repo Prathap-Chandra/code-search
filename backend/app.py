@@ -21,7 +21,7 @@ def search():
     response = {}
     for file_recommendations in result.files:
         response[file_recommendations.file_name] = []
-        for function_def in file_recommendations.functions:
+        for function_def in file_recommendations.snippets:
             response[file_recommendations.file_name].append({
                 f"{function_def.line_start}:{function_def.line_end}": function_def.code
             })
@@ -30,3 +30,16 @@ def search():
 
 if __name__ == '__main__':
     app.run(debug=True, host='127.0.0.1', port=3002)
+
+@app.route('/comment', methods=['POST'])
+def comment():
+    data = request.get_json()
+    query = data.get('query')
+    current_context = data.get('current_context')
+
+    mock_response = {
+        'response': "This does this."
+    }
+
+    return jsonify(mock_response)
+
