@@ -150,7 +150,7 @@ export default function Home() {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-8 gap-8">
       <RetroGrid />
-      <WordPullUp words="Code Search Tool" />
+      <WordPullUp words="Code Detective" />
       <div>
         {
           "Search Massive Repos using Natural Language (no preprocessing required)"
