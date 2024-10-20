@@ -238,6 +238,9 @@ export default function Home() {
           <CommentPopup
             onSubmit={handleCommentSubmit}
             onClose={handleCommentClose}
+            searchResults={searchResults}
+            currentFile={currentFile}
+            currentLine={currentLine}
           />
         </div>
       )}
