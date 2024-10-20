@@ -1,5 +1,8 @@
 # code-search
 
+### Demo
+https://www.youtube.com/watch?v=srR50wOpVKo
+
 ### How to run this:
 
 Make a FireWorks api key on fireworks.ai.
