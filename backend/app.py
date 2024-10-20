@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+import time
 
 from retrieval.search import run_search, find_explanation
 
@@ -15,7 +16,10 @@ def search():
     print(f"Received GitHub URL: {github_url}")
     print(f"Received Query: {query}")
 
+    start = time.time()
     result = run_search(github_url, query)
+    end = time.time()
+    print(f"Search took {end - start} seconds to run.")
 
     response = {}
     for file_recommendations in result.files:

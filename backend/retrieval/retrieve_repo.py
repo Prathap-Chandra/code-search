@@ -46,6 +46,8 @@ def get_repo_contents(repo_url, folder_path=None):
 
 def get_repo_file_structure(repo_url, path=None):
     contents = get_repo_contents(repo_url, path)
+    if contents is None:
+      return None
             
     folder_contents = FolderContents(directories=[], files=[])
     if isinstance(contents, list):

@@ -27,13 +27,15 @@ ANSWER_FORMAT = f"""
 Provide you answer in json format:
 
 {{
-  "{RELEVANT_DIRECTORIES_KEY}": [<list of names of the most relevant file>. Leave empty if no relevant file is found],
-  "{RELEVANT_FILES_KEY}": [<list of names of the most relevant directories>. Leave empty if no relevant directory is found]"
+  "{RELEVANT_DIRECTORIES_KEY}": [<list of names of the most relevant file. Return up to 3. Leave empty if no relevant file is found.>],
+  "{RELEVANT_FILES_KEY}": [<list of names of the most relevant directories. Return up to 3. Leave empty if no relevant directory is found.>]"
 }}
 
 To reiterate:
 1. Only return a json object and nothing else. Your response should begin with an open brace and end with a close brace.
 2. Please ensure that every file or directory you return exists. Double check that it was one of the options.
+3. In general, if you feel like a directory could be relevant, you should return it. You want to optimize for recall. For files, you
+   should be a bit more selective.
 """
 
 
@@ -61,13 +63,14 @@ ANSWER_FORMAT_FILES = f"""
 Provide you answer in json format:
 
 {{
-  "{RELEVANT_FUNCTIONS_KEY}": [<list of most relevant function names. Leave empty if no relevant functions are found>]
-  "{RELEVANT_CLASSES_KEY}": [<list of most relevant class names. Leave empty if no relevant classes are found>]
+  "{RELEVANT_FUNCTIONS_KEY}": [<list of function names relevant to the user's query. Leave empty if no relevant functions are found.>]
+  "{RELEVANT_CLASSES_KEY}": [<list of class names relevant to the user's query. Leave empty if no relevant classes are found.>]
 }}
 
 To reiterate:
 1. Only return a json object and nothing else. Your response should begin with an open brace and end with a close brace.
 2. Please ensure that every function or class you return exists. Double check that it exists in the file code.
+3. Only return functions or classes that are highly relevant to the user's query. You want to optimize for precision. 
 """
 
 

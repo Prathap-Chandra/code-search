@@ -60,10 +60,12 @@ def build_folder_structure_search_sys_prompt(query, folder_contents):
 
 def prepare_prompt_and_call_model(repo, query, directory):
   contents = get_repo_file_structure(repo, directory)
+  if not contents:
+    return (directory, {})
   sys_prompt = build_folder_structure_search_sys_prompt(query, contents)
   response = call_model(LLAMA_70B, sys_prompt)
   parsed_response = json.loads(response)
-  return parsed_response
+  return (directory, parsed_response)
 
 def search_for_relevant_files(repo, query):
   files_to_use = []
@@ -75,17 +77,16 @@ def search_for_relevant_files(repo, query):
   while directories_to_search:
     print("Searching directories:", directories_to_search)
 
-    if len(directories_to_search) == 1 or True:
-      print("Serial")
+    if len(directories_to_search) < 4:
       directory = directories_to_search.pop(0)
       responses = [prepare_prompt_and_call_model(repo, query, directory)]
     else:
       print("Parallel")
       args = [(repo, query, directory) for directory in directories_to_search]
       directories_to_search = []
-      responses = [processor.process(prepare_prompt_and_call_model, args)]
+      responses = processor.process(prepare_prompt_and_call_model, args)
 
-    for response in responses:
+    for (directory, response) in responses:
       if RELEVANT_DIRECTORIES_KEY in response:
         for sub_dir in response[RELEVANT_DIRECTORIES_KEY]:
           if directory:
@@ -110,57 +111,66 @@ def build_file_contents_search_sys_prompt(query, file_contents):
     query=query
   ) + "\n" + ANSWER_FORMAT_FILES
 
+
+def prepare_function_search_prompt_and_call_model(repo, query, file):
+  file_contents = get_file_contents(repo, file)
+  if not file_contents:
+    return None
+
+  sys_prompt = build_file_contents_search_sys_prompt(query, file_contents)
+  response = call_model(LLAMA_70B, sys_prompt)
+  parsed_response = json.loads(response)
+
+
+  file_recommendations = FileRecommendations(file_name=file, snippets=[])
+  if RELEVANT_FUNCTIONS_KEY in parsed_response:
+    print(f"Relevant functions found in file: {file}:", parsed_response[RELEVANT_FUNCTIONS_KEY])
+    for function_name in parsed_response[RELEVANT_FUNCTIONS_KEY]:
+      func_def = find_code_snippet_definition(file_contents.code, function_name, "function")
+      if not func_def:
+        return None
+
+      line_start, line_end, function_code = func_def
+      
+      function_def = CodeSnippetDefinition(name=function_name, 
+        line_start=line_start, line_end=line_end, code=function_code)
+      file_recommendations.snippets.append(function_def)
+
+  if RELEVANT_CLASSES_KEY in parsed_response:
+    print(f"Relevant classes found in file: {file}:", parsed_response[RELEVANT_CLASSES_KEY])
+    for class_name in parsed_response[RELEVANT_CLASSES_KEY]:
+      class_def = find_code_snippet_definition(file_contents.code, class_name, "class")
+      if not class_def:
+        return None
+
+      line_start, line_end, class_code = class_def
+      
+      class_def = CodeSnippetDefinition(name=class_name, 
+        line_start=line_start, line_end=line_end, code=class_code)
+      file_recommendations.snippets.append(class_def)
+  
+  return file_recommendations
+
 def search_for_relevant_functions(repo, query, files_to_use):
   recommendations = Recommendations([])
+  processor = MultiprocessingProcessor(concurrency = 10)
 
-  for file in files_to_use:
-    file_contents = get_file_contents(repo, file)
-    if not file_contents:
-      continue
+  if len(files_to_use) < 5:
+    # Serial
+    responses = []
+    for file in files_to_use:
+      responses.append(prepare_function_search_prompt_and_call_model(repo, query, file))
+  else:
+    # Parallel
+    args = [(repo, query, file) for file in files_to_use]
+    responses = processor.process(prepare_function_search_prompt_and_call_model, args)
 
-    sys_prompt = build_file_contents_search_sys_prompt(query, file_contents)
-    response = call_model(LLAMA_70B, sys_prompt)
-    parsed_response = json.loads(response)
 
-
-    file_recommendations = FileRecommendations(file_name=file, snippets=[])
-    if RELEVANT_FUNCTIONS_KEY in parsed_response:
-      print(f"Relevant functions found in file: {file}:", parsed_response[RELEVANT_FUNCTIONS_KEY])
-      for function_name in parsed_response[RELEVANT_FUNCTIONS_KEY]:
-        func_def = find_code_snippet_definition(file_contents.code, function_name, "function")
-        if not func_def:
-          continue
-
-        line_start, line_end, function_code = func_def
-        
-        function_def = CodeSnippetDefinition(name=function_name, 
-          line_start=line_start, line_end=line_end, code=function_code)
-        file_recommendations.snippets.append(function_def)
-
-    if RELEVANT_CLASSES_KEY in parsed_response:
-      print(f"Relevant classes found in file: {file}:", parsed_response[RELEVANT_CLASSES_KEY])
-      for class_name in parsed_response[RELEVANT_CLASSES_KEY]:
-        class_def = find_code_snippet_definition(file_contents.code, class_name, "class")
-        if not class_def:
-          continue
-
-        line_start, line_end, class_code = class_def
-        
-        class_def = CodeSnippetDefinition(name=class_name, 
-          line_start=line_start, line_end=line_end, code=class_code)
-        file_recommendations.snippets.append(class_def)
-    
-    if file_recommendations.snippets: 
+  for file_recommendations in responses:
+    if file_recommendations and file_recommendations.snippets:
       recommendations.files.append(file_recommendations)
 
   return recommendations
-
-def display_recommendations(recommendations):
-  for file_recommendations in recommendations.files:
-    print(f"\nFile: {file_recommendations.file_name}")
-    for function_def in file_recommendations.functions:
-      print(f"Function: {function_def.name}")
-      print(function_def.code)
 
 def extract_github_base_url(github_url):
     # Parse the URL
@@ -179,7 +189,6 @@ def extract_github_base_url(github_url):
 
 def run_search(repo, query):
   base_url = extract_github_base_url(repo)
-  print("Base URL:", base_url)
   files_to_use = search_for_relevant_files(base_url, query)
   print("Files to use:", files_to_use)
   recommendations = search_for_relevant_functions(base_url, query, files_to_use)
