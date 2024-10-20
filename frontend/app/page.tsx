@@ -1,10 +1,9 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { CommentPopup } from "@/components/ui/CommentPopup";
-import { EditorView } from "@codemirror/view";
 import CodeMirror from "@uiw/react-codemirror";
 import { javascript } from "@codemirror/lang-javascript";
 import { python } from "@codemirror/lang-python";
@@ -24,11 +23,8 @@ export default function Home() {
     [key: string]: { [key: number]: string[] };
   }>({});
   const [showCommentPopup, setShowCommentPopup] = useState(false);
-  const [commentPosition, setCommentPosition] = useState({ top: 0, left: 0 });
   const [currentFile, setCurrentFile] = useState<string | null>(null);
   const [currentLine, setCurrentLine] = useState<number | null>(null);
-
-  const codeMirrorRef = useRef<HTMLDivElement>(null);
 
   const handleSearch = async () => {
     setIsLoading(true);
@@ -62,25 +58,10 @@ export default function Home() {
   };
 
   const handleLineClick = useCallback(
-    (
-      event: React.MouseEvent<HTMLDivElement>,
-      filename: string,
-      startLine: number
-    ) => {
-      if (codeMirrorRef.current) {
-        const rect = codeMirrorRef.current.getBoundingClientRect();
-        const lineHeight = 20; // Adjust this value based on your CodeMirror line height
-        const clickedLine =
-          Math.floor((event.clientY - rect.top) / lineHeight) + startLine;
-
-        setCommentPosition({
-          top: event.clientY - rect.top,
-          left: event.clientX - rect.left,
-        });
-        setShowCommentPopup(true);
-        setCurrentFile(filename);
-        setCurrentLine(clickedLine);
-      }
+    (filename: string, lineNumber: number) => {
+      setShowCommentPopup(true);
+      setCurrentFile(filename);
+      setCurrentLine(lineNumber);
     },
     []
   );
@@ -170,10 +151,7 @@ export default function Home() {
                           Lines {lineRange}:
                         </p>
                         <div
-                          ref={codeMirrorRef}
-                          onClick={(event) =>
-                            handleLineClick(event, filename, startLine)
-                          }
+                          onClick={() => handleLineClick(filename, startLine)}
                         >
                           <CodeMirror
                             value={code}
@@ -227,23 +205,14 @@ export default function Home() {
           ))}
         </div>
       )}
-      {showCommentPopup && (
-        <div
-          style={{
-            position: "absolute",
-            top: commentPosition.top,
-            left: commentPosition.left,
-          }}
-        >
-          <CommentPopup
-            onSubmit={handleCommentSubmit}
-            onClose={handleCommentClose}
-            searchResults={searchResults}
-            currentFile={currentFile}
-            currentLine={currentLine}
-          />
-        </div>
-      )}
+      <CommentPopup
+        onSubmit={handleCommentSubmit}
+        onClose={handleCommentClose}
+        searchResults={searchResults}
+        currentFile={currentFile}
+        currentLine={currentLine}
+        isOpen={showCommentPopup}
+      />
     </div>
   );
 }

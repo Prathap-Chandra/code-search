@@ -1,15 +1,25 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+
 type SearchResult = {
   [filename: string]: Array<{ [lineRange: string]: string }>;
 };
+
 interface CommentPopupProps {
   onSubmit: (comment: string) => void;
   onClose: () => void;
-  searchResults: SearchResult[];
-  currentFile: string;
-  currentLine: number;
+  searchResults: SearchResult | null;
+  currentFile: string | null;
+  currentLine: number | null;
+  isOpen: boolean;
 }
 
 export function CommentPopup({
@@ -18,6 +28,7 @@ export function CommentPopup({
   searchResults,
   currentFile,
   currentLine,
+  isOpen,
 }: CommentPopupProps) {
   const [comment, setComment] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -57,6 +68,7 @@ export function CommentPopup({
       setCommentResults(data);
       onSubmit(comment);
       setComment("");
+      onClose();
     } catch (e) {
       console.error("An error occurred while submitting the comment:", e);
       // Handle error appropriately
@@ -65,26 +77,30 @@ export function CommentPopup({
     }
   };
 
-  console.log("currentFile", currentFile);
-  console.log("currentLine", currentLine);
-
   return (
-    <div className="absolute bg-white border border-gray-300 p-4 rounded shadow-lg">
-      <Input
-        type="text"
-        value={comment}
-        onChange={(e) => setComment(e.target.value)}
-        placeholder="Add your comment..."
-        className="mb-2"
-      />
-      <div className="flex justify-end gap-2">
-        <Button onClick={handleSubmit} disabled={!comment.trim()}>
-          Submit
-        </Button>
-        <Button onClick={onClose} variant="outline">
-          Cancel
-        </Button>
-      </div>
-    </div>
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Add Comment</DialogTitle>
+        </DialogHeader>
+        <Textarea
+          value={comment}
+          onChange={(e) => setComment(e.target.value)}
+          placeholder="Add your comment..."
+          className="min-h-[100px]"
+        />
+        <DialogFooter>
+          <Button onClick={onClose} variant="outline">
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSubmit}
+            disabled={!comment.trim() || isLoading}
+          >
+            {isLoading ? "Submitting..." : "Submit"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
